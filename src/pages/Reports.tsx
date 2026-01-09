@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Star, Plus, Search, Calendar, User } from 'lucide-react';
+import ReportDetailsDialog from '@/components/ReportDetailsDialog';
 
 interface Report {
   id: string;
@@ -15,6 +16,18 @@ interface Report {
   box_rating: number;
   team_description: string | null;
   created_at: string;
+  created_by: string | null;
+}
+
+// Helper function to format date correctly without timezone issues
+function formatEventDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 }
 
 export default function Reports() {
@@ -22,6 +35,8 @@ export default function Reports() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -86,8 +101,14 @@ export default function Reports() {
             {filteredReports.map((report, index) => (
               <Card 
                 key={report.id} 
-                className={`hover:shadow-card transition-shadow animate-slide-up opacity-0`}
+                className={`hover:shadow-card transition-shadow animate-slide-up opacity-0 ${userRole === 'admin' ? 'cursor-pointer' : ''}`}
                 style={{ animationDelay: `${index * 0.05}s` }}
+                onClick={() => {
+                  if (userRole === 'admin') {
+                    setSelectedReport(report);
+                    setDialogOpen(true);
+                  }
+                }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -98,11 +119,7 @@ export default function Reports() {
                       </CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(report.event_date).toLocaleDateString('pt-BR', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                        {formatEventDate(report.event_date)}
                       </CardDescription>
                     </div>
                   </div>
@@ -157,6 +174,13 @@ export default function Reports() {
             </CardContent>
           </Card>
         )}
+
+        {/* Report Details Dialog for Admins */}
+        <ReportDetailsDialog
+          report={selectedReport}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
       </div>
     </AppLayout>
   );

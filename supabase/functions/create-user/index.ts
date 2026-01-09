@@ -94,13 +94,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Add to members table
+    // Add to members table with correct member_type
     const { error: memberError } = await supabaseAdmin
       .from('members')
       .insert({ 
         name, 
         email,
-        active: true
+        active: true,
+        member_type: role // 'admin' or 'animador'
       })
 
     if (memberError) {

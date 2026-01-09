@@ -164,31 +164,37 @@ export default function Dashboard() {
               </div>
             ) : recentReports.length > 0 ? (
               <div className="space-y-4">
-                {recentReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex-1">
-                      <h4 className="font-medium">{report.birthday_person_name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(report.event_date).toLocaleDateString('pt-BR')}
-                      </p>
+                {recentReports.map((report) => {
+                  // Parse date correctly without timezone issues
+                  const [year, month, day] = report.event_date.split('-').map(Number);
+                  const eventDate = new Date(year, month - 1, day);
+                  
+                  return (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium">{report.birthday_person_name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {eventDate.toLocaleDateString('pt-BR')}
+                        </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < report.box_rating
-                              ? 'text-sun fill-sun'
-                              : 'text-muted'
-                          }`}
-                        />
-                      ))}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < report.box_rating
+                                ? 'text-sun fill-sun'
+                                : 'text-muted'
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
