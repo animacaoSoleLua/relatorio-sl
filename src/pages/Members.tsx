@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +18,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, Search, Mail, MessageSquare, User } from 'lucide-react';
+import { Plus, Search, Mail, MessageSquare, User, Shield, Sparkles, Gamepad2 } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -24,6 +26,7 @@ interface Member {
   email: string;
   avatar_url: string | null;
   active: boolean;
+  member_type: string;
 }
 
 interface MemberFeedback {
@@ -44,6 +47,7 @@ export default function Members() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberType, setNewMemberType] = useState<string>('recreador');
   const [savingMember, setSavingMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberFeedbacks, setMemberFeedbacks] = useState<MemberFeedback[]>([]);
@@ -108,9 +112,15 @@ export default function Members() {
       const { error } = await supabase.from('members').insert({
         name: newMemberName.trim(),
         email: newMemberEmail.trim(),
+        member_type: newMemberType,
       });
 
       if (error) throw error;
+
+      toast.success('Membro adicionado com sucesso!');
+      setNewMemberName('');
+      setNewMemberEmail('');
+      setNewMemberType('recreador');
 
       toast.success('Membro adicionado com sucesso!');
       setNewMemberName('');
@@ -186,6 +196,37 @@ export default function Members() {
                       onChange={(e) => setNewMemberEmail(e.target.value)}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="memberType">Tipo de Membro</Label>
+                    <Select value={newMemberType} onValueChange={setNewMemberType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="recreador">
+                          <div className="flex items-center gap-2">
+                            <Gamepad2 className="h-4 w-4" />
+                            Recreador
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="animador">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            Animador
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Administrador
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Recreadores não têm acesso ao sistema. Animadores e admins serão criados como usuários na aba "Usuários".
+                    </p>
+                  </div>
                   <div className="flex gap-3 pt-2">
                     <Button
                       type="button"
@@ -247,11 +288,28 @@ export default function Members() {
                         {member.email}
                       </p>
                     </div>
-                    {!member.active && (
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        Inativo
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={
+                          member.member_type === 'admin' 
+                            ? 'default' 
+                            : member.member_type === 'animador' 
+                              ? 'secondary' 
+                              : 'outline'
+                        }
+                        className="text-xs"
+                      >
+                        {member.member_type === 'admin' && <Shield className="h-3 w-3 mr-1" />}
+                        {member.member_type === 'animador' && <Sparkles className="h-3 w-3 mr-1" />}
+                        {member.member_type === 'recreador' && <Gamepad2 className="h-3 w-3 mr-1" />}
+                        {member.member_type === 'admin' ? 'Admin' : member.member_type === 'animador' ? 'Animador' : 'Recreador'}
+                      </Badge>
+                      {!member.active && (
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          Inativo
+                        </span>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))
@@ -305,20 +363,26 @@ export default function Members() {
                         </div>
                       ) : memberFeedbacks.length > 0 ? (
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                          {memberFeedbacks.map((feedback) => (
-                            <div
-                              key={feedback.id}
-                              className="p-3 rounded-lg bg-muted/50 space-y-2"
-                            >
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Evento: {feedback.report.birthday_person_name}</span>
-                                <span>
-                                  {new Date(feedback.report.event_date).toLocaleDateString('pt-BR')}
-                                </span>
+                          {memberFeedbacks.map((feedback) => {
+                            // Parse date correctly without timezone issues
+                            const [year, month, day] = feedback.report.event_date.split('-').map(Number);
+                            const eventDate = new Date(year, month - 1, day);
+                            
+                            return (
+                              <div
+                                key={feedback.id}
+                                className="p-3 rounded-lg bg-muted/50 space-y-2"
+                              >
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>Evento: {feedback.report.birthday_person_name}</span>
+                                  <span>
+                                    {eventDate.toLocaleDateString('pt-BR')}
+                                  </span>
+                                </div>
+                                <p className="text-sm">{feedback.feedback}</p>
                               </div>
-                              <p className="text-sm">{feedback.feedback}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">
