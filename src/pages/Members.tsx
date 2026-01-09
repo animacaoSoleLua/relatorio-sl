@@ -17,8 +17,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Search, Mail, MessageSquare, User, Shield, Sparkles, Gamepad2 } from 'lucide-react';
+import { Plus, Search, Mail, MessageSquare, User, Shield, Sparkles, Gamepad2, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -45,10 +55,18 @@ export default function Members() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [memberToEdit, setMemberToEdit] = useState<Member | null>(null);
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberType, setNewMemberType] = useState<string>('recreador');
+  const [editMemberName, setEditMemberName] = useState('');
+  const [editMemberEmail, setEditMemberEmail] = useState('');
+  const [editMemberType, setEditMemberType] = useState<string>('recreador');
   const [savingMember, setSavingMember] = useState(false);
+  const [deletingMember, setDeletingMember] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [memberFeedbacks, setMemberFeedbacks] = useState<MemberFeedback[]>([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
@@ -121,10 +139,6 @@ export default function Members() {
       setNewMemberName('');
       setNewMemberEmail('');
       setNewMemberType('recreador');
-
-      toast.success('Membro adicionado com sucesso!');
-      setNewMemberName('');
-      setNewMemberEmail('');
       setIsDialogOpen(false);
       fetchMembers();
     } catch (error: any) {
@@ -136,6 +150,99 @@ export default function Members() {
     } finally {
       setSavingMember(false);
     }
+  };
+
+  const handleEditMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!memberToEdit || !editMemberName.trim() || !editMemberEmail.trim()) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    setSavingMember(true);
+
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({
+          name: editMemberName.trim(),
+          email: editMemberEmail.trim(),
+          member_type: editMemberType,
+        })
+        .eq('id', memberToEdit.id);
+
+      if (error) throw error;
+
+      toast.success('Membro atualizado com sucesso!');
+      setIsEditDialogOpen(false);
+      setMemberToEdit(null);
+      fetchMembers();
+      
+      // Update selected member if it's the same
+      if (selectedMember?.id === memberToEdit.id) {
+        setSelectedMember({
+          ...selectedMember,
+          name: editMemberName.trim(),
+          email: editMemberEmail.trim(),
+          member_type: editMemberType,
+        });
+      }
+    } catch (error: any) {
+      if (error.code === '23505') {
+        toast.error('Já existe um membro com esse email');
+      } else {
+        toast.error('Erro ao atualizar membro');
+      }
+    } finally {
+      setSavingMember(false);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+
+    setDeletingMember(true);
+
+    try {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', memberToDelete.id);
+
+      if (error) throw error;
+
+      toast.success('Membro removido com sucesso!');
+      setDeleteDialogOpen(false);
+      setMemberToDelete(null);
+      
+      // Clear selection if deleted member was selected
+      if (selectedMember?.id === memberToDelete.id) {
+        setSelectedMember(null);
+        setMemberFeedbacks([]);
+      }
+      
+      fetchMembers();
+    } catch (error) {
+      toast.error('Erro ao remover membro');
+    } finally {
+      setDeletingMember(false);
+    }
+  };
+
+  const openEditDialog = (member: Member, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMemberToEdit(member);
+    setEditMemberName(member.name);
+    setEditMemberEmail(member.email);
+    setEditMemberType(member.member_type);
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (member: Member, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMemberToDelete(member);
+    setDeleteDialogOpen(true);
   };
 
   const handleMemberClick = (member: Member) => {
@@ -224,7 +331,7 @@ export default function Members() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Recreadores não têm acesso ao sistema. Animadores e admins serão criados como usuários na aba "Usuários".
+                      Recreadores não têm acesso ao sistema. Para criar animadores ou admins com acesso, use a aba "Usuários".
                     </p>
                   </div>
                   <div className="flex gap-3 pt-2">
@@ -236,7 +343,14 @@ export default function Members() {
                       Cancelar
                     </Button>
                     <Button type="submit" disabled={savingMember} className="flex-1">
-                      {savingMember ? 'Salvando...' : 'Adicionar'}
+                      {savingMember ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Salvando...
+                        </>
+                      ) : (
+                        'Adicionar'
+                      )}
                     </Button>
                   </div>
                 </form>
@@ -309,6 +423,26 @@ export default function Members() {
                           Inativo
                         </span>
                       )}
+                      {userRole === 'admin' && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => openEditDialog(member, e)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={(e) => openDeleteDialog(member, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -364,7 +498,6 @@ export default function Members() {
                       ) : memberFeedbacks.length > 0 ? (
                         <div className="space-y-3 max-h-[400px] overflow-y-auto">
                           {memberFeedbacks.map((feedback) => {
-                            // Parse date correctly without timezone issues
                             const [year, month, day] = feedback.report.event_date.split('-').map(Number);
                             const eventDate = new Date(year, month - 1, day);
                             
@@ -409,6 +542,115 @@ export default function Members() {
             )}
           </div>
         </div>
+
+        {/* Edit Member Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Membro</DialogTitle>
+              <DialogDescription>
+                Altere as informações do membro
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditMember} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editName">Nome</Label>
+                <Input
+                  id="editName"
+                  placeholder="Nome completo"
+                  value={editMemberName}
+                  onChange={(e) => setEditMemberName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={editMemberEmail}
+                  onChange={(e) => setEditMemberEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editMemberType">Tipo de Membro</Label>
+                <Select value={editMemberType} onValueChange={setEditMemberType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recreador">
+                      <div className="flex items-center gap-2">
+                        <Gamepad2 className="h-4 w-4" />
+                        Recreador
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="animador">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        Animador
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Administrador
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={savingMember} className="flex-1">
+                  {savingMember ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Member Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover Membro</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover o membro <strong>{memberToDelete?.name}</strong>?
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteMember}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deletingMember ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Removendo...
+                  </>
+                ) : (
+                  'Remover'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
