@@ -15,6 +15,7 @@ import {
   LayoutDashboard, 
   FileText, 
   Users, 
+  UserCog,
   Menu, 
   LogOut,
   User,
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Relatórios', href: '/reports', icon: FileText, adminOnly: false },
   { name: 'Novo Relatório', href: '/reports/new', icon: PlusCircle, adminOnly: false },
   { name: 'Membros', href: '/members', icon: Users, adminOnly: false },
+  { name: 'Usuários', href: '/users', icon: UserCog, adminOnly: true },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
