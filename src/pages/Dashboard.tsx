@@ -1,0 +1,203 @@
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Users, Star, Calendar } from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
+
+interface DashboardStats {
+  totalReports: number;
+  totalMembers: number;
+  averageRating: number;
+  reportsThisMonth: number;
+}
+
+export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalReports: 0,
+    totalMembers: 0,
+    averageRating: 0,
+    reportsThisMonth: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [recentReports, setRecentReports] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch total reports
+      const { count: totalReports } = await supabase
+        .from('reports')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch total members
+      const { count: totalMembers } = await supabase
+        .from('members')
+        .select('*', { count: 'exact', head: true })
+        .eq('active', true);
+
+      // Fetch average rating
+      const { data: ratingData } = await supabase
+        .from('reports')
+        .select('box_rating');
+
+      const averageRating = ratingData && ratingData.length > 0
+        ? ratingData.reduce((acc, r) => acc + r.box_rating, 0) / ratingData.length
+        : 0;
+
+      // Fetch reports this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { count: reportsThisMonth } = await supabase
+        .from('reports')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfMonth.toISOString());
+
+      // Fetch recent reports
+      const { data: recent } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setStats({
+        totalReports: totalReports || 0,
+        totalMembers: totalMembers || 0,
+        averageRating: Math.round(averageRating * 10) / 10,
+        reportsThisMonth: reportsThisMonth || 0,
+      });
+
+      setRecentReports(recent || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statCards = [
+    {
+      title: 'Total de Relatórios',
+      value: stats.totalReports,
+      icon: FileText,
+      description: 'Relatórios cadastrados',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
+    },
+    {
+      title: 'Membros Ativos',
+      value: stats.totalMembers,
+      icon: Users,
+      description: 'Na equipe Sol e Lua',
+      color: 'text-secondary',
+      bgColor: 'bg-secondary/20',
+    },
+    {
+      title: 'Avaliação Média',
+      value: stats.averageRating.toFixed(1),
+      icon: Star,
+      description: 'Das caixas de festa',
+      color: 'text-sun',
+      bgColor: 'bg-sun/20',
+    },
+    {
+      title: 'Relatórios do Mês',
+      value: stats.reportsThisMonth,
+      icon: Calendar,
+      description: 'Eventos realizados',
+      color: 'text-purple-glow',
+      bgColor: 'bg-purple-light',
+    },
+  ];
+
+  return (
+    <AppLayout>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Visão geral do sistema Sol e Lua Animação
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card, index) => (
+            <Card 
+              key={card.title} 
+              className={`animate-slide-up opacity-0 stagger-${index + 1}`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {card.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{loading ? '...' : card.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {card.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Recent Reports */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Relatórios Recentes</CardTitle>
+            <CardDescription>Últimos eventos cadastrados no sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
+                ))}
+              </div>
+            ) : recentReports.length > 0 ? (
+              <div className="space-y-4">
+                {recentReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium">{report.birthday_person_name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(report.event_date).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < report.box_rating
+                              ? 'text-sun fill-sun'
+                              : 'text-muted'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum relatório cadastrado ainda
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+}
