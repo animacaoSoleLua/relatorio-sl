@@ -322,16 +322,10 @@ export default function Members() {
                             Animador
                           </div>
                         </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            Administrador
-                          </div>
-                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Recreadores não têm acesso ao sistema. Para criar animadores ou admins com acesso, use a aba "Usuários".
+                      Recreadores não têm acesso ao sistema. Para criar animadores com acesso, use a aba "Usuários".
                     </p>
                   </div>
                   <div className="flex gap-3 pt-2">
@@ -589,12 +583,6 @@ export default function Members() {
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4" />
                         Animador
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Administrador
                       </div>
                     </SelectItem>
                   </SelectContent>
