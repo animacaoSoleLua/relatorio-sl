@@ -45,14 +45,27 @@ export default function NewReport() {
 
   const fetchMembers = async () => {
     try {
+      // First get the current user's profile to find their email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', user?.id)
+        .single();
+
       const { data, error } = await supabase
         .from('members')
-        .select('id, name, avatar_url')
+        .select('id, name, avatar_url, email')
         .eq('active', true)
         .order('name');
 
       if (error) throw error;
-      setMembers(data || []);
+      
+      // Filter out the current user from the members list
+      const filteredMembers = (data || []).filter(
+        (member) => member.email !== profile?.email
+      );
+      
+      setMembers(filteredMembers);
     } catch (error) {
       console.error('Error fetching members:', error);
     }
