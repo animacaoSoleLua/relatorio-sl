@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users, Star, Calendar } from 'lucide-react';
+import { FileText, Users, Star, Calendar, LayoutGrid, List } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Toggle } from '@/components/ui/toggle';
 import AppLayout from '@/components/layout/AppLayout';
+import ReportDetailsDialog from '@/components/ReportDetailsDialog';
 
 interface DashboardStats {
   totalReports: number;
@@ -20,6 +23,9 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [recentReports, setRecentReports] = useState<any[]>([]);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   useEffect(() => {
     fetchDashboardData();
@@ -151,9 +157,29 @@ export default function Dashboard() {
 
         {/* Recent Reports */}
         <Card>
-          <CardHeader>
-            <CardTitle>Relatórios Recentes</CardTitle>
-            <CardDescription>Últimos eventos cadastrados no sistema</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Relatórios Recentes</CardTitle>
+              <CardDescription>Últimos eventos cadastrados no sistema</CardDescription>
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+              <Toggle
+                pressed={viewMode === 'list'}
+                onPressedChange={() => setViewMode('list')}
+                size="sm"
+                aria-label="Visualização em lista"
+              >
+                <List className="h-4 w-4" />
+              </Toggle>
+              <Toggle
+                pressed={viewMode === 'grid'}
+                onPressedChange={() => setViewMode('grid')}
+                size="sm"
+                aria-label="Visualização em grade"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Toggle>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -163,23 +189,28 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : recentReports.length > 0 ? (
-              <div className="space-y-4">
+              <div className={viewMode === 'grid' ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'space-y-4'}>
                 {recentReports.map((report) => {
-                  // Parse date correctly without timezone issues
                   const [year, month, day] = report.event_date.split('-').map(Number);
                   const eventDate = new Date(year, month - 1, day);
                   
                   return (
                     <div
                       key={report.id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      onClick={() => {
+                        setSelectedReport(report);
+                        setDialogOpen(true);
+                      }}
+                      className={`flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer ${
+                        viewMode === 'grid' ? 'flex-col items-start gap-3' : ''
+                      }`}
                     >
                       <div className="flex-1">
                         <h4 className="font-medium">{report.birthday_person_name}</h4>
                         <p className="text-sm text-muted-foreground">
                           {eventDate.toLocaleDateString('pt-BR')}
                         </p>
-                    </div>
+                      </div>
                       <div className="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star
@@ -203,6 +234,12 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        <ReportDetailsDialog
+          report={selectedReport}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
       </div>
     </AppLayout>
   );
