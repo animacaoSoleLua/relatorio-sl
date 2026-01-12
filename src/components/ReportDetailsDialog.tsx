@@ -9,7 +9,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Star, Calendar, User, Image, MessageSquare, Loader2 } from 'lucide-react';
+import { Star, Calendar, User, Image, MessageSquare, Loader2, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface Report {
   id: string;
@@ -115,6 +117,43 @@ export default function ReportDetailsDialog({
     }
   };
 
+  const handleDownloadPhoto = async (photoUrl: string, photoType: string) => {
+    try {
+      const response = await fetch(photoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const extension = photoUrl.split('.').pop()?.split('?')[0] || 'jpg';
+      const fileName = `${report?.birthday_person_name || 'foto'}_${photoType}_${Date.now()}.${extension}`;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading photo:', error);
+      toast.error('Erro ao baixar foto');
+    }
+  };
+
+  const handleDownloadAllPhotos = async () => {
+    if (photos.length === 0) return;
+    
+    toast.info('Baixando fotos...');
+    
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i];
+      await handleDownloadPhoto(photo.photo_url, photo.photo_type);
+      // Small delay between downloads
+      if (i < photos.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+    
+    toast.success(`${photos.length} foto(s) baixada(s)!`);
+  };
+
   const eventPhotos = photos.filter((p) => p.photo_type === 'event');
   const workshopPhotos = photos.filter((p) => p.photo_type === 'workshop');
 
@@ -210,6 +249,21 @@ export default function ReportDetailsDialog({
                 </>
               )}
 
+              {/* Download All Photos Button */}
+              {photos.length > 0 && (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={handleDownloadAllPhotos}
+                  >
+                    <Download className="h-4 w-4" />
+                    Baixar Todas ({photos.length})
+                  </Button>
+                </div>
+              )}
+
               {/* Event Photos */}
               {eventPhotos.length > 0 && (
                 <div className="space-y-3">
@@ -219,19 +273,31 @@ export default function ReportDetailsDialog({
                   </h4>
                   <div className="grid grid-cols-3 gap-2">
                     {eventPhotos.map((photo) => (
-                      <a
-                        key={photo.id}
-                        href={photo.photo_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
-                      >
-                        <img
-                          src={photo.photo_url}
-                          alt="Foto do evento"
-                          className="w-full h-full object-cover"
-                        />
-                      </a>
+                      <div key={photo.id} className="relative group aspect-square">
+                        <a
+                          href={photo.photo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full h-full rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
+                        >
+                          <img
+                            src={photo.photo_url}
+                            alt="Foto do evento"
+                            className="w-full h-full object-cover"
+                          />
+                        </a>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDownloadPhoto(photo.photo_url, 'evento');
+                          }}
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -246,19 +312,31 @@ export default function ReportDetailsDialog({
                   </h4>
                   <div className="grid grid-cols-3 gap-2">
                     {workshopPhotos.map((photo) => (
-                      <a
-                        key={photo.id}
-                        href={photo.photo_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="aspect-square rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
-                      >
-                        <img
-                          src={photo.photo_url}
-                          alt="Foto da oficina"
-                          className="w-full h-full object-cover"
-                        />
-                      </a>
+                      <div key={photo.id} className="relative group aspect-square">
+                        <a
+                          href={photo.photo_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full h-full rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
+                        >
+                          <img
+                            src={photo.photo_url}
+                            alt="Foto da oficina"
+                            className="w-full h-full object-cover"
+                          />
+                        </a>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDownloadPhoto(photo.photo_url, 'oficina');
+                          }}
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
