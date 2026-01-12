@@ -100,7 +100,7 @@ export default function Login() {
         </Card>
         
         <p className="text-center text-primary-foreground/70 text-sm mt-6">
-          © 2024 Sol e Lua Animação
+          Animação Sol e Lua
         </p>
       </div>
     </div>
