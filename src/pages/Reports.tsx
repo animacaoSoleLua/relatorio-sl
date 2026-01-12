@@ -48,7 +48,7 @@ export default function Reports() {
       const { data, error } = await supabase
         .from('reports')
         .select('*')
-        .order('event_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
