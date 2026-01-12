@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Star, Upload, X, Loader2 } from 'lucide-react';
+import { Star, Upload, X, Loader2, Search } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -38,6 +38,7 @@ export default function NewReport() {
   const [workshopPhotos, setWorkshopPhotos] = useState<File[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [memberFeedbacks, setMemberFeedbacks] = useState<Record<string, string>>({});
+  const [memberSearch, setMemberSearch] = useState('');
 
   useEffect(() => {
     fetchMembers();
@@ -365,46 +366,66 @@ export default function NewReport() {
               {members.length > 0 && (
                 <div className="space-y-3">
                   <Label>Mencionar Membros (com feedback individual)</Label>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {members.map((member) => (
-                      <div
-                        key={member.id}
-                        className={`p-3 rounded-lg border transition-colors ${
-                          selectedMembers.includes(member.id)
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Checkbox
-                            id={`member-${member.id}`}
-                            checked={selectedMembers.includes(member.id)}
-                            onCheckedChange={() => toggleMemberSelection(member.id)}
-                          />
-                          <label
-                            htmlFor={`member-${member.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {member.name}
-                          </label>
-                        </div>
-                        {selectedMembers.includes(member.id) && (
-                          <Textarea
-                            placeholder={`Feedback para ${member.name}...`}
-                            value={memberFeedbacks[member.id] || ''}
-                            onChange={(e) =>
-                              setMemberFeedbacks((prev) => ({
-                                ...prev,
-                                [member.id]: e.target.value,
-                              }))
-                            }
-                            rows={2}
-                            className="text-sm"
-                          />
-                        )}
-                      </div>
-                    ))}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar membro..."
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                      className="pl-9"
+                    />
                   </div>
+                  <div className="grid gap-3 sm:grid-cols-2 max-h-80 overflow-y-auto">
+                    {members
+                      .filter((member) =>
+                        member.name.toLowerCase().includes(memberSearch.toLowerCase())
+                      )
+                      .map((member) => (
+                        <div
+                          key={member.id}
+                          className={`p-3 rounded-lg border transition-colors ${
+                            selectedMembers.includes(member.id)
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Checkbox
+                              id={`member-${member.id}`}
+                              checked={selectedMembers.includes(member.id)}
+                              onCheckedChange={() => toggleMemberSelection(member.id)}
+                            />
+                            <label
+                              htmlFor={`member-${member.id}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {member.name}
+                            </label>
+                          </div>
+                          {selectedMembers.includes(member.id) && (
+                            <Textarea
+                              placeholder={`Feedback para ${member.name}...`}
+                              value={memberFeedbacks[member.id] || ''}
+                              onChange={(e) =>
+                                setMemberFeedbacks((prev) => ({
+                                  ...prev,
+                                  [member.id]: e.target.value,
+                                }))
+                              }
+                              rows={2}
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                  {members.filter((member) =>
+                    member.name.toLowerCase().includes(memberSearch.toLowerCase())
+                  ).length === 0 && memberSearch && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum membro encontrado
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
