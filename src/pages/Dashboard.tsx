@@ -9,7 +9,6 @@ import ReportDetailsDialog from '@/components/ReportDetailsDialog';
 
 interface DashboardStats {
   totalReports: number;
-  totalMembers: number;
   averageRating: number;
   reportsThisMonth: number;
 }
@@ -17,7 +16,6 @@ interface DashboardStats {
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalReports: 0,
-    totalMembers: 0,
     averageRating: 0,
     reportsThisMonth: 0,
   });
@@ -37,12 +35,6 @@ export default function Dashboard() {
       const { count: totalReports } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true });
-
-      // Fetch total members
-      const { count: totalMembers } = await supabase
-        .from('members')
-        .select('*', { count: 'exact', head: true })
-        .eq('active', true);
 
       // Fetch average rating
       const { data: ratingData } = await supabase
@@ -87,7 +79,6 @@ export default function Dashboard() {
 
       setStats({
         totalReports: totalReports || 0,
-        totalMembers: totalMembers || 0,
         averageRating: Math.round(averageRating * 10) / 10,
         reportsThisMonth: reportsThisMonth || 0,
       });
@@ -108,14 +99,6 @@ export default function Dashboard() {
       description: 'Relatórios cadastrados',
       color: 'text-primary',
       bgColor: 'bg-primary/10',
-    },
-    {
-      title: 'Membros Ativos',
-      value: stats.totalMembers,
-      icon: Users,
-      description: 'Na equipe Sol e Lua',
-      color: 'text-secondary',
-      bgColor: 'bg-secondary/20',
     },
     {
       title: 'Avaliação Média',
@@ -141,7 +124,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            Visão geral do sistema Sol e Lua Animação
+            Visão geral do sistema.
           </p>
         </div>
 
