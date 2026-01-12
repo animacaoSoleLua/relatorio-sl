@@ -17,6 +17,7 @@ interface Report {
   team_description: string | null;
   created_at: string;
   created_by: string | null;
+  creator_name?: string;
 }
 
 // Helper function to format date correctly without timezone issues
@@ -50,7 +51,23 @@ export default function Reports() {
         .order('event_date', { ascending: false });
 
       if (error) throw error;
-      setReports(data || []);
+      
+      // Fetch creator names for each report
+      const reportsWithCreators = await Promise.all(
+        (data || []).map(async (report) => {
+          if (report.created_by) {
+            const { data: creator } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', report.created_by)
+              .maybeSingle();
+            return { ...report, creator_name: creator?.name || 'Usuário' };
+          }
+          return { ...report, creator_name: 'Usuário' };
+        })
+      );
+      
+      setReports(reportsWithCreators);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -59,7 +76,8 @@ export default function Reports() {
   };
 
   const filteredReports = reports.filter((report) =>
-    report.birthday_person_name.toLowerCase().includes(searchTerm.toLowerCase())
+    report.birthday_person_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (report.creator_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   return (
@@ -115,7 +133,7 @@ export default function Reports() {
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
                         <User className="h-4 w-4 text-primary" />
-                        {report.birthday_person_name}
+                        {report.creator_name}
                       </CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" />

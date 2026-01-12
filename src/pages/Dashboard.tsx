@@ -63,12 +63,27 @@ export default function Dashboard() {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', startOfMonth.toISOString());
 
-      // Fetch recent reports
+      // Fetch recent reports with creator info
       const { data: recent } = await supabase
         .from('reports')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(5);
+
+      // Fetch creator names for each report
+      const reportsWithCreators = await Promise.all(
+        (recent || []).map(async (report) => {
+          if (report.created_by) {
+            const { data: creator } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', report.created_by)
+              .maybeSingle();
+            return { ...report, creator_name: creator?.name || 'Usuário' };
+          }
+          return { ...report, creator_name: 'Usuário' };
+        })
+      );
 
       setStats({
         totalReports: totalReports || 0,
@@ -77,7 +92,7 @@ export default function Dashboard() {
         reportsThisMonth: reportsThisMonth || 0,
       });
 
-      setRecentReports(recent || []);
+      setRecentReports(reportsWithCreators);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -206,7 +221,7 @@ export default function Dashboard() {
                       }`}
                     >
                       <div className="flex-1">
-                        <h4 className="font-medium">{report.birthday_person_name}</h4>
+                        <h4 className="font-medium">{report.creator_name}</h4>
                         <p className="text-sm text-muted-foreground">
                           {eventDate.toLocaleDateString('pt-BR')}
                         </p>
