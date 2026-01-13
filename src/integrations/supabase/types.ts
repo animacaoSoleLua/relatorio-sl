@@ -154,9 +154,25 @@ export type Database = {
           box_rating: number
           created_at: string
           created_by: string | null
+          difficulties_problems: string | null
+          electronics_observations: string | null
           event_date: string
+          event_description: string | null
+          event_difficulty: number | null
+          event_quality: number | null
+          exclusivity: boolean | null
+          extra_hours: boolean | null
           id: string
+          microphone_quality: number | null
+          outside_brasilia: boolean | null
+          speaker_number: number | null
+          speaker_quality: number | null
           team_description: string | null
+          title_schedule: string | null
+          transportation_other_details: string | null
+          transportation_type: string | null
+          uber_cost_going: number | null
+          uber_cost_return: number | null
           updated_at: string
         }
         Insert: {
@@ -164,9 +180,25 @@ export type Database = {
           box_rating: number
           created_at?: string
           created_by?: string | null
+          difficulties_problems?: string | null
+          electronics_observations?: string | null
           event_date: string
+          event_description?: string | null
+          event_difficulty?: number | null
+          event_quality?: number | null
+          exclusivity?: boolean | null
+          extra_hours?: boolean | null
           id?: string
+          microphone_quality?: number | null
+          outside_brasilia?: boolean | null
+          speaker_number?: number | null
+          speaker_quality?: number | null
           team_description?: string | null
+          title_schedule?: string | null
+          transportation_other_details?: string | null
+          transportation_type?: string | null
+          uber_cost_going?: number | null
+          uber_cost_return?: number | null
           updated_at?: string
         }
         Update: {
@@ -174,9 +206,25 @@ export type Database = {
           box_rating?: number
           created_at?: string
           created_by?: string | null
+          difficulties_problems?: string | null
+          electronics_observations?: string | null
           event_date?: string
+          event_description?: string | null
+          event_difficulty?: number | null
+          event_quality?: number | null
+          exclusivity?: boolean | null
+          extra_hours?: boolean | null
           id?: string
+          microphone_quality?: number | null
+          outside_brasilia?: boolean | null
+          speaker_number?: number | null
+          speaker_quality?: number | null
           team_description?: string | null
+          title_schedule?: string | null
+          transportation_other_details?: string | null
+          transportation_type?: string | null
+          uber_cost_going?: number | null
+          uber_cost_return?: number | null
           updated_at?: string
         }
         Relationships: []
