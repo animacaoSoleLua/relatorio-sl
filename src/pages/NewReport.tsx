@@ -293,7 +293,7 @@ export default function NewReport() {
     optional: boolean = true
   ) => (
     <div className="space-y-3">
-      <Label>{label} {optional && <span className="text-muted-foreground">(opcional)</span>}</Label>
+      <Label>{label} {optional && <span className="text-muted-foreground">(Caso tenha)</span>}</Label>
       <div className="flex flex-wrap gap-3">
         {photos.map((file, index) => (
           <div key={index} className="relative group">
@@ -359,7 +359,7 @@ export default function NewReport() {
                   <Label htmlFor="titleSchedule">Título/Cronograma</Label>
                   <Input
                     id="titleSchedule"
-                    placeholder="Ex: Festa tema Frozen - 4h"
+                    placeholder="Colocar titulo que aparece na agenda"
                     value={titleSchedule}
                     onChange={(e) => setTitleSchedule(e.target.value)}
                   />
@@ -405,7 +405,7 @@ export default function NewReport() {
                   <Label htmlFor="otherDetails">Especifique (responsável pelo carro)</Label>
                   <Input
                     id="otherDetails"
-                    placeholder="Ex: João foi de carro próprio"
+                    placeholder="Ex: Anarq foi com carro próprio"
                     value={transportationOtherDetails}
                     onChange={(e) => setTransportationOtherDetails(e.target.value)}
                   />
@@ -493,8 +493,6 @@ export default function NewReport() {
                 />
               </div>
 
-              {renderStarRating(boxRating, setBoxRating, "Avaliação Geral *")}
-
               {members.length > 0 && (
                 <div className="space-y-3">
                   <Label>Mencionar Membros (com feedback individual)</Label>
@@ -571,22 +569,6 @@ export default function NewReport() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="eventDescription">Descrição</Label>
-                <Textarea
-                  id="eventDescription"
-                  placeholder="Descreva como foi o evento..."
-                  value={eventDescription}
-                  onChange={(e) => setEventDescription(e.target.value)}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {renderStarRating(eventDifficulty, setEventDifficulty, "Dificuldade do Evento")}
-                {renderStarRating(eventQuality, setEventQuality, "Qualidade do Evento")}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="difficultiesProblems">Dificuldades e Problemas</Label>
                 <Textarea
                   id="difficultiesProblems"
@@ -595,6 +577,11 @@ export default function NewReport() {
                   onChange={(e) => setDifficultiesProblems(e.target.value)}
                   rows={3}
                 />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {renderStarRating(eventDifficulty, setEventDifficulty, "Dificuldade do Evento")}
+                {renderStarRating(eventQuality, setEventQuality, "Qualidade do Evento")}
               </div>
             </CardContent>
           </Card>
