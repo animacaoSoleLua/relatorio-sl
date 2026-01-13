@@ -46,6 +46,7 @@ interface ReportDetailsDialogProps {
   report: Report | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isAdmin?: boolean;
 }
 
 // Helper function to format date correctly without timezone issues
@@ -63,6 +64,7 @@ export default function ReportDetailsDialog({
   report,
   open,
   onOpenChange,
+  isAdmin = false,
 }: ReportDetailsDialogProps) {
   const [photos, setPhotos] = useState<ReportPhoto[]>([]);
   const [mentions, setMentions] = useState<MemberMention[]>([]);
@@ -225,8 +227,8 @@ export default function ReportDetailsDialog({
                 </>
               )}
 
-              {/* Member Feedbacks */}
-              {mentions.length > 0 && (
+              {/* Member Feedbacks - Only visible to admins */}
+              {isAdmin && mentions.length > 0 && (
                 <>
                   <div className="space-y-3">
                     <h4 className="font-medium flex items-center gap-2">
@@ -249,8 +251,8 @@ export default function ReportDetailsDialog({
                 </>
               )}
 
-              {/* Download All Photos Button */}
-              {photos.length > 0 && (
+              {/* Download All Photos Button - Only visible to admins */}
+              {isAdmin && photos.length > 0 && (
                 <div className="flex justify-end">
                   <Button
                     variant="outline"
@@ -286,17 +288,19 @@ export default function ReportDetailsDialog({
                             className="w-full h-full object-cover"
                           />
                         </a>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleDownloadPhoto(photo.photo_url, 'evento');
-                          }}
-                        >
-                          <Download className="h-3 w-3" />
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDownloadPhoto(photo.photo_url, 'evento');
+                            }}
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -325,17 +329,19 @@ export default function ReportDetailsDialog({
                             className="w-full h-full object-cover"
                           />
                         </a>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleDownloadPhoto(photo.photo_url, 'oficina');
-                          }}
-                        >
-                          <Download className="h-3 w-3" />
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute bottom-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDownloadPhoto(photo.photo_url, 'oficina');
+                            }}
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
