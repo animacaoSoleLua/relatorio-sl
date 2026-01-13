@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Star, Upload, X, Loader2, Search } from 'lucide-react';
 
@@ -23,22 +25,60 @@ interface MemberMention {
   feedback: string;
 }
 
+interface PhotoCategory {
+  key: string;
+  label: string;
+  files: File[];
+}
+
 export default function NewReport() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   
-  // Form state
+  // Basic Info
   const [eventDate, setEventDate] = useState('');
+  const [titleSchedule, setTitleSchedule] = useState('');
   const [birthdayPersonName, setBirthdayPersonName] = useState('');
-  const [boxRating, setBoxRating] = useState(0);
+  
+  // Transportation
+  const [transportationType, setTransportationType] = useState('uber');
+  const [transportationOtherDetails, setTransportationOtherDetails] = useState('');
+  const [uberCostGoing, setUberCostGoing] = useState('');
+  const [uberCostReturn, setUberCostReturn] = useState('');
+  
+  // Event Flags
+  const [outsideBrasilia, setOutsideBrasilia] = useState(false);
+  const [extraHours, setExtraHours] = useState(false);
+  const [exclusivity, setExclusivity] = useState(false);
+  
+  // Team Feedback
   const [teamDescription, setTeamDescription] = useState('');
-  const [eventPhotos, setEventPhotos] = useState<File[]>([]);
-  const [workshopPhotos, setWorkshopPhotos] = useState<File[]>([]);
+  const [boxRating, setBoxRating] = useState(0);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [memberFeedbacks, setMemberFeedbacks] = useState<Record<string, string>>({});
   const [memberSearch, setMemberSearch] = useState('');
+  
+  // Event Description
+  const [eventDescription, setEventDescription] = useState('');
+  const [eventDifficulty, setEventDifficulty] = useState(3);
+  const [eventQuality, setEventQuality] = useState(3);
+  const [difficultiesProblems, setDifficultiesProblems] = useState('');
+  
+  // Electronics
+  const [speakerQuality, setSpeakerQuality] = useState(3);
+  const [microphoneQuality, setMicrophoneQuality] = useState(3);
+  const [speakerNumber, setSpeakerNumber] = useState('');
+  const [electronicsObservations, setElectronicsObservations] = useState('');
+  const [damagePhotos, setDamagePhotos] = useState<File[]>([]);
+  
+  // Photo categories
+  const [paintingPhotos, setPaintingPhotos] = useState<File[]>([]);
+  const [balloonPhotos, setBalloonPhotos] = useState<File[]>([]);
+  const [animationPhotos, setAnimationPhotos] = useState<File[]>([]);
+  const [charactersPhotos, setCharactersPhotos] = useState<File[]>([]);
+  const [workshopPhotos, setWorkshopPhotos] = useState<File[]>([]);
 
   useEffect(() => {
     fetchMembers();
@@ -46,7 +86,6 @@ export default function NewReport() {
 
   const fetchMembers = async () => {
     try {
-      // First get the current user's profile to find their email
       const { data: profile } = await supabase
         .from('profiles')
         .select('email')
@@ -61,7 +100,6 @@ export default function NewReport() {
 
       if (error) throw error;
       
-      // Filter out the current user from the members list
       const filteredMembers = (data || []).filter(
         (member) => member.email !== profile?.email
       );
@@ -72,23 +110,20 @@ export default function NewReport() {
     }
   };
 
-  const handlePhotoUpload = (files: FileList | null, type: 'event' | 'workshop') => {
+  const handlePhotoUpload = (
+    files: FileList | null, 
+    setter: React.Dispatch<React.SetStateAction<File[]>>
+  ) => {
     if (!files) return;
-    
     const fileArray = Array.from(files);
-    if (type === 'event') {
-      setEventPhotos((prev) => [...prev, ...fileArray]);
-    } else {
-      setWorkshopPhotos((prev) => [...prev, ...fileArray]);
-    }
+    setter((prev) => [...prev, ...fileArray]);
   };
 
-  const removePhoto = (index: number, type: 'event' | 'workshop') => {
-    if (type === 'event') {
-      setEventPhotos((prev) => prev.filter((_, i) => i !== index));
-    } else {
-      setWorkshopPhotos((prev) => prev.filter((_, i) => i !== index));
-    }
+  const removePhoto = (
+    index: number, 
+    setter: React.Dispatch<React.SetStateAction<File[]>>
+  ) => {
+    setter((prev) => prev.filter((_, i) => i !== index));
   };
 
   const toggleMemberSelection = (memberId: string) => {
@@ -99,10 +134,10 @@ export default function NewReport() {
     );
   };
 
-  const uploadPhotos = async (files: File[], reportId: string, type: 'event' | 'workshop') => {
+  const uploadPhotos = async (files: File[], reportId: string, type: string) => {
     const uploadPromises = files.map(async (file) => {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}/${reportId}/${type}/${Date.now()}.${fileExt}`;
+      const fileName = `${user?.id}/${reportId}/${type}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('report-photos')
@@ -135,14 +170,30 @@ export default function NewReport() {
     setLoading(true);
 
     try {
-      // Create report
+      // Create report with all new fields
       const { data: report, error: reportError } = await supabase
         .from('reports')
         .insert({
           event_date: eventDate,
+          title_schedule: titleSchedule || null,
           birthday_person_name: birthdayPersonName,
-          box_rating: boxRating,
+          transportation_type: transportationType,
+          transportation_other_details: transportationType === 'outro' ? transportationOtherDetails : null,
+          uber_cost_going: uberCostGoing ? parseFloat(uberCostGoing.replace(',', '.')) : 0,
+          uber_cost_return: uberCostReturn ? parseFloat(uberCostReturn.replace(',', '.')) : 0,
+          outside_brasilia: outsideBrasilia,
+          extra_hours: extraHours,
+          exclusivity: exclusivity,
           team_description: teamDescription || null,
+          box_rating: boxRating,
+          event_description: eventDescription || null,
+          event_difficulty: eventDifficulty,
+          event_quality: eventQuality,
+          difficulties_problems: difficultiesProblems || null,
+          speaker_quality: speakerQuality,
+          microphone_quality: microphoneQuality,
+          speaker_number: speakerNumber ? parseInt(speakerNumber) : null,
+          electronics_observations: electronicsObservations || null,
           created_by: user?.id,
         })
         .select()
@@ -150,17 +201,23 @@ export default function NewReport() {
 
       if (reportError) throw reportError;
 
-      // Upload photos
+      // Upload all photo categories
       const allPhotos: any[] = [];
+      
+      const photoCategories = [
+        { files: paintingPhotos, type: 'painting' },
+        { files: balloonPhotos, type: 'balloon' },
+        { files: animationPhotos, type: 'animation' },
+        { files: charactersPhotos, type: 'characters' },
+        { files: workshopPhotos, type: 'workshop' },
+        { files: damagePhotos, type: 'damage' },
+      ];
 
-      if (eventPhotos.length > 0) {
-        const eventPhotoRecords = await uploadPhotos(eventPhotos, report.id, 'event');
-        allPhotos.push(...eventPhotoRecords);
-      }
-
-      if (workshopPhotos.length > 0) {
-        const workshopPhotoRecords = await uploadPhotos(workshopPhotos, report.id, 'workshop');
-        allPhotos.push(...workshopPhotoRecords);
+      for (const category of photoCategories) {
+        if (category.files.length > 0) {
+          const photoRecords = await uploadPhotos(category.files, report.id, category.type);
+          allPhotos.push(...photoRecords);
+        }
       }
 
       if (allPhotos.length > 0) {
@@ -198,6 +255,77 @@ export default function NewReport() {
     }
   };
 
+  const renderStarRating = (
+    value: number, 
+    onChange: (v: number) => void, 
+    label: string
+  ) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2">
+        {[1, 2, 3, 4, 5].map((rating) => (
+          <button
+            key={rating}
+            type="button"
+            onClick={() => onChange(rating)}
+            className="p-1 transition-transform hover:scale-110"
+          >
+            <Star
+              className={`h-6 w-6 transition-colors ${
+                rating <= value
+                  ? 'text-sun fill-sun'
+                  : 'text-muted hover:text-sun/50'
+              }`}
+            />
+          </button>
+        ))}
+        <span className="text-sm text-muted-foreground ml-2">
+          {value > 0 ? `${value}/5` : 'Selecione'}
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderPhotoUploader = (
+    label: string,
+    photos: File[],
+    setPhotos: React.Dispatch<React.SetStateAction<File[]>>,
+    optional: boolean = true
+  ) => (
+    <div className="space-y-3">
+      <Label>{label} {optional && <span className="text-muted-foreground">(opcional)</span>}</Label>
+      <div className="flex flex-wrap gap-3">
+        {photos.map((file, index) => (
+          <div key={index} className="relative group">
+            <img
+              src={URL.createObjectURL(file)}
+              alt={`${label} ${index + 1}`}
+              className="h-20 w-20 object-cover rounded-lg border border-border"
+            />
+            <button
+              type="button"
+              onClick={() => removePhoto(index, setPhotos)}
+              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        <label className="h-20 w-20 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/50 transition-colors">
+          <Upload className="h-5 w-5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => handlePhotoUpload(e.target.files, setPhotos)}
+            className="hidden"
+          />
+        </label>
+      </div>
+    </div>
+  );
+
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto">
@@ -228,116 +356,118 @@ export default function NewReport() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="birthdayPerson">Nome do Aniversariante *</Label>
+                  <Label htmlFor="titleSchedule">Título/Cronograma</Label>
                   <Input
-                    id="birthdayPerson"
-                    placeholder="Ex: Maria Silva"
-                    value={birthdayPersonName}
-                    onChange={(e) => setBirthdayPersonName(e.target.value)}
-                    required
+                    id="titleSchedule"
+                    placeholder="Ex: Festa tema Frozen - 4h"
+                    value={titleSchedule}
+                    onChange={(e) => setTitleSchedule(e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Avaliação da Caixa *</Label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <button
-                      key={rating}
-                      type="button"
-                      onClick={() => setBoxRating(rating)}
-                      className="p-1 transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={`h-8 w-8 transition-colors ${
-                          rating <= boxRating
-                            ? 'text-sun fill-sun'
-                            : 'text-muted hover:text-sun/50'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-sm text-muted-foreground ml-2">
-                    {boxRating > 0 ? `${boxRating}/5` : 'Selecione'}
-                  </span>
-                </div>
+                <Label htmlFor="birthdayPerson">Aniversariante / Contratante *</Label>
+                <Input
+                  id="birthdayPerson"
+                  placeholder="Nome do aniversariante, contratante ou empresa"
+                  value={birthdayPersonName}
+                  onChange={(e) => setBirthdayPersonName(e.target.value)}
+                  required
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Photos Card */}
+          {/* Transportation Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Fotos</CardTitle>
-              <CardDescription>Adicione fotos do evento e oficina</CardDescription>
+              <CardTitle>Locomoção</CardTitle>
+              <CardDescription>Informações sobre transporte</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Event Photos */}
-              <div className="space-y-3">
-                <Label>Fotos do Evento</Label>
-                <div className="flex flex-wrap gap-3">
-                  {eventPhotos.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`Event ${index + 1}`}
-                        className="h-24 w-24 object-cover rounded-lg border border-border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(index, 'event')}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <label className="h-24 w-24 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/50 transition-colors">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e.target.files, 'event')}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Forma de Locomoção</Label>
+                <Select value={transportationType} onValueChange={setTransportationType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="uber">Uber/99</SelectItem>
+                    <SelectItem value="carro_empresa">Carro da Empresa</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Workshop Photos */}
-              <div className="space-y-3">
-                <Label>Fotos de Oficina (opcional)</Label>
-                <div className="flex flex-wrap gap-3">
-                  {workshopPhotos.map((file, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={`Workshop ${index + 1}`}
-                        className="h-24 w-24 object-cover rounded-lg border border-border"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(index, 'workshop')}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <label className="h-24 w-24 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/50 transition-colors">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handlePhotoUpload(e.target.files, 'workshop')}
-                      className="hidden"
+              {transportationType === 'outro' && (
+                <div className="space-y-2">
+                  <Label htmlFor="otherDetails">Especifique (responsável pelo carro)</Label>
+                  <Input
+                    id="otherDetails"
+                    placeholder="Ex: João foi de carro próprio"
+                    value={transportationOtherDetails}
+                    onChange={(e) => setTransportationOtherDetails(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {transportationType === 'uber' && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="uberGoing">Valor Uber (ida)</Label>
+                    <Input
+                      id="uberGoing"
+                      placeholder="Ex: 25,50"
+                      value={uberCostGoing}
+                      onChange={(e) => setUberCostGoing(e.target.value)}
                     />
-                  </label>
+                    <p className="text-xs text-muted-foreground">
+                      Some valores de múltiplos Ubers se houver
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="uberReturn">Valor Uber (volta)</Label>
+                    <Input
+                      id="uberReturn"
+                      placeholder="Ex: 30,00"
+                      value={uberCostReturn}
+                      onChange={(e) => setUberCostReturn(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <Label htmlFor="outsideBrasilia" className="cursor-pointer">
+                    Fora de Brasília?
+                  </Label>
+                  <Switch
+                    id="outsideBrasilia"
+                    checked={outsideBrasilia}
+                    onCheckedChange={setOutsideBrasilia}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <Label htmlFor="extraHours" className="cursor-pointer">
+                    Hora Extra?
+                  </Label>
+                  <Switch
+                    id="extraHours"
+                    checked={extraHours}
+                    onCheckedChange={setExtraHours}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <Label htmlFor="exclusivity" className="cursor-pointer">
+                    Exclusividade?
+                  </Label>
+                  <Switch
+                    id="exclusivity"
+                    checked={exclusivity}
+                    onCheckedChange={setExclusivity}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -348,20 +478,22 @@ export default function NewReport() {
             <CardHeader>
               <CardTitle>Feedback da Equipe</CardTitle>
               <CardDescription>
-                Descreva como a equipe se saiu e mencione os membros
+                Avaliação e comentários sobre a equipe
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="teamDescription">Descrição Geral</Label>
+                <Label htmlFor="teamDescription">Descrição Geral da Equipe</Label>
                 <Textarea
                   id="teamDescription"
                   placeholder="Descreva como foi o desempenho da equipe no evento..."
                   value={teamDescription}
                   onChange={(e) => setTeamDescription(e.target.value)}
-                  rows={4}
+                  rows={3}
                 />
               </div>
+
+              {renderStarRating(boxRating, setBoxRating, "Avaliação Geral *")}
 
               {members.length > 0 && (
                 <div className="space-y-3">
@@ -428,6 +560,101 @@ export default function NewReport() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Event Description Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Descrição do Evento</CardTitle>
+              <CardDescription>Detalhes sobre a festa</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="eventDescription">Descrição</Label>
+                <Textarea
+                  id="eventDescription"
+                  placeholder="Descreva como foi o evento..."
+                  value={eventDescription}
+                  onChange={(e) => setEventDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {renderStarRating(eventDifficulty, setEventDifficulty, "Dificuldade do Evento")}
+                {renderStarRating(eventQuality, setEventQuality, "Qualidade do Evento")}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="difficultiesProblems">Dificuldades e Problemas</Label>
+                <Textarea
+                  id="difficultiesProblems"
+                  placeholder="Relate dificuldades ou problemas encontrados..."
+                  value={difficultiesProblems}
+                  onChange={(e) => setDifficultiesProblems(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Electronics Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Eletrônicos</CardTitle>
+              <CardDescription>Avaliação dos equipamentos</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {renderStarRating(speakerQuality, setSpeakerQuality, "Qualidade da Caixa de Som")}
+                {renderStarRating(microphoneQuality, setMicrophoneQuality, "Qualidade do Microfone")}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="speakerNumber">Número da Caixa (1-19)</Label>
+                <Input
+                  id="speakerNumber"
+                  type="number"
+                  min="1"
+                  max="19"
+                  placeholder="Ex: 5"
+                  value={speakerNumber}
+                  onChange={(e) => setSpeakerNumber(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="electronicsObservations">Observações</Label>
+                <Textarea
+                  id="electronicsObservations"
+                  placeholder="Observações sobre os equipamentos..."
+                  value={electronicsObservations}
+                  onChange={(e) => setElectronicsObservations(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {renderPhotoUploader(
+                "Fotos de Avarias",
+                damagePhotos,
+                setDamagePhotos
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Photos Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fotos/Arquivos do Evento</CardTitle>
+              <CardDescription>Adicione fotos por categoria</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {renderPhotoUploader("Pintura", paintingPhotos, setPaintingPhotos)}
+              {renderPhotoUploader("Balão", balloonPhotos, setBalloonPhotos)}
+              {renderPhotoUploader("Animação", animationPhotos, setAnimationPhotos)}
+              {renderPhotoUploader("Personagens", charactersPhotos, setCharactersPhotos)}
+              {renderPhotoUploader("Oficina", workshopPhotos, setWorkshopPhotos)}
             </CardContent>
           </Card>
 
