@@ -178,7 +178,7 @@ export default function ReportDetailsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            Detalhes do Evento do {report?.birthday_person_name}
+            Detalhes do evento do dia {formatEventDate(report.event_date)}
           </DialogTitle>
         </DialogHeader>
 
@@ -192,11 +192,9 @@ export default function ReportDetailsDialog({
               {/* Basic Info */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">{report.birthday_person_name}</h3>
-                  <Badge variant="outline" className="gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatEventDate(report.event_date)}
-                  </Badge>
+                  <h3 className="text-xl font-semibold">
+                    Cliente: {report.birthday_person_name}
+                    </h3>
                 </div>
 
                 <div className="flex items-center gap-2">

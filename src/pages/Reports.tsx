@@ -37,7 +37,7 @@ function formatEventDate(dateStr: string): string {
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
   });
 }
@@ -157,7 +157,7 @@ export default function Reports() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por aniversariante..."
+            placeholder="Buscar por nome..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -191,6 +191,7 @@ export default function Reports() {
                       </CardTitle>
                       <CardDescription className="flex items-center gap-1 mt-1">
                         <Calendar className="h-3 w-3" />
+                        <p>Evento do dia</p>
                         {formatEventDate(report.event_date)}
                       </CardDescription>
                     </div>
