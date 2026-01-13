@@ -6,8 +6,19 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Star, Plus, Search, Calendar, User } from 'lucide-react';
+import { Star, Plus, Search, Calendar, User, Trash2 } from 'lucide-react';
 import ReportDetailsDialog from '@/components/ReportDetailsDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 interface Report {
   id: string;
@@ -38,6 +49,9 @@ export default function Reports() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchReports();
@@ -80,6 +94,48 @@ export default function Reports() {
     (report.creator_name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
+  const handleDeleteClick = (e: React.MouseEvent, report: Report) => {
+    e.stopPropagation();
+    setReportToDelete(report);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!reportToDelete) return;
+
+    setDeleting(true);
+    try {
+      // Delete related records first
+      await supabase
+        .from('report_member_mentions')
+        .delete()
+        .eq('report_id', reportToDelete.id);
+
+      await supabase
+        .from('report_photos')
+        .delete()
+        .eq('report_id', reportToDelete.id);
+
+      // Delete the report
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', reportToDelete.id);
+
+      if (error) throw error;
+
+      setReports(reports.filter(r => r.id !== reportToDelete.id));
+      toast.success('Relatório excluído com sucesso!');
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast.error('Erro ao excluir relatório');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      setReportToDelete(null);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -119,18 +175,16 @@ export default function Reports() {
             {filteredReports.map((report, index) => (
               <Card 
                 key={report.id} 
-                className={`hover:shadow-card transition-shadow animate-slide-up opacity-0 ${userRole === 'admin' ? 'cursor-pointer' : ''}`}
+                className="hover:shadow-card transition-shadow animate-slide-up opacity-0 cursor-pointer"
                 style={{ animationDelay: `${index * 0.05}s` }}
                 onClick={() => {
-                  if (userRole === 'admin') {
-                    setSelectedReport(report);
-                    setDialogOpen(true);
-                  }
+                  setSelectedReport(report);
+                  setDialogOpen(true);
                 }}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <User className="h-4 w-4 text-primary" />
                         {report.creator_name}
@@ -140,6 +194,16 @@ export default function Reports() {
                         {formatEventDate(report.event_date)}
                       </CardDescription>
                     </div>
+                    {userRole === 'admin' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleDeleteClick(e, report)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -193,12 +257,36 @@ export default function Reports() {
           </Card>
         )}
 
-        {/* Report Details Dialog for Admins */}
+        {/* Report Details Dialog */}
         <ReportDetailsDialog
           report={selectedReport}
           open={dialogOpen}
           onOpenChange={setDialogOpen}
+          isAdmin={userRole === 'admin'}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Relatório</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este relatório? Esta ação não pode ser desfeita.
+                Todas as fotos e feedbacks associados também serão removidos.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? 'Excluindo...' : 'Excluir'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
