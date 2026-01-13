@@ -32,7 +32,7 @@ export default function Login() {
         toast.error('Email ou senha incorretos');
       } else {
         toast.success('Login realizado com sucesso!');
-        navigate('/dashboard');
+        navigate('/reports');
       }
     } catch (error) {
       toast.error('Erro ao fazer login');

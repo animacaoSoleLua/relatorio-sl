@@ -101,10 +101,9 @@ export default function Dashboard() {
       bgColor: 'bg-primary/10',
     },
     {
-      title: 'Avaliação Média',
+      title: 'Avaliação Média da Equipe',
       value: stats.averageRating.toFixed(1),
       icon: Star,
-      description: 'Das caixas de festa',
       color: 'text-sun',
       bgColor: 'bg-sun/20',
     },

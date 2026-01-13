@@ -89,9 +89,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0">
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-center p-6 border-b border-border">
+                <Link to="/reports" className="flex items-center justify-center p-6 border-b border-border">
                   <img src={logo} alt="Sol e Lua" className="h-16 w-auto" />
-                </div>
+                </Link>
                 <nav className="flex-1 p-4 space-y-2">
                   <NavLinks />
                 </nav>
@@ -99,7 +99,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </SheetContent>
           </Sheet>
           
-          <img src={logo} alt="Sol e Lua" className="h-10 w-auto" />
+          <Link to="/reports">
+            <img src={logo} alt="Sol e Lua" className="h-10 w-auto" />
+          </Link>
           
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -120,6 +122,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
@@ -133,9 +139,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex">
         {/* Desktop sidebar */}
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-card border-r border-border">
-          <div className="flex items-center justify-center p-6 border-b border-border">
+          <Link to="/reports" className="flex items-center justify-center p-6 border-b border-border">
             <img src={logo} alt="Sol e Lua" className="h-20 w-auto" />
-          </div>
+          </Link>
           
           <nav className="flex-1 p-4 space-y-2">
             <NavLinks />
@@ -166,6 +172,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair

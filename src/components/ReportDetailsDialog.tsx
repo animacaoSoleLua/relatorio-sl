@@ -55,14 +55,27 @@ function formatEventDate(dateStr: string): string {
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('pt-BR', {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric',
+  });
+}
+
+// Helper function to format creation date
+function formatCreatedAtDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    // hour: '2-digit',
+    // minute: '2-digit',
   });
 }
 
 export default function ReportDetailsDialog({
   report,
   open,
+
   onOpenChange,
   isAdmin = false,
 }: ReportDetailsDialogProps) {
@@ -165,7 +178,7 @@ export default function ReportDetailsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            Detalhes do Evento
+            Detalhes do Evento do {report?.birthday_person_name}
           </DialogTitle>
         </DialogHeader>
 
@@ -187,7 +200,7 @@ export default function ReportDetailsDialog({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Avaliação da caixa:</span>
+                  <span className="text-sm text-muted-foreground">Avaliação da Equipe:</span>
                   <div className="flex items-center gap-1">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
@@ -207,6 +220,9 @@ export default function ReportDetailsDialog({
                     Criado por: <span className="font-medium text-foreground">{creator.name}</span>
                   </div>
                 )}
+                <div className="text-sm text-muted-foreground">
+                  Criado em: <span className="font-medium text-foreground">{formatCreatedAtDate(report.created_at)}</span>
+                </div>
               </div>
 
               <Separator />

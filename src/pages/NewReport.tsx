@@ -346,7 +346,7 @@ export default function NewReport() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="eventDate">Data do Evento *</Label>
+                  <Label htmlFor="eventDate">Data do Evento (Obrigatório)</Label>
                   <Input
                     id="eventDate"
                     type="date"
@@ -367,7 +367,7 @@ export default function NewReport() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="birthdayPerson">Aniversariante / Contratante *</Label>
+                <Label htmlFor="birthdayPerson">Aniversariante / Contratante (Obrigatório)</Label>
                 <Input
                   id="birthdayPerson"
                   placeholder="Nome do aniversariante, contratante ou empresa"
@@ -486,12 +486,14 @@ export default function NewReport() {
                 <Label htmlFor="teamDescription">Descrição Geral da Equipe</Label>
                 <Textarea
                   id="teamDescription"
-                  placeholder="Descreva como foi o desempenho da equipe no evento..."
+                  placeholder="Descreva como foi o desempenho da equipe no evento em geral..."
                   value={teamDescription}
                   onChange={(e) => setTeamDescription(e.target.value)}
                   rows={3}
                 />
               </div>
+
+              {renderStarRating(boxRating, setBoxRating, "Avaliação Geral da Equipe (Obrigatório)")}
 
               {members.length > 0 && (
                 <div className="space-y-3">
@@ -505,56 +507,58 @@ export default function NewReport() {
                       className="pl-9"
                     />
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2 max-h-80 overflow-y-auto">
-                    {members
-                      .filter((member) =>
-                        member.name.toLowerCase().includes(memberSearch.toLowerCase())
-                      )
-                      .map((member) => (
-                        <div
-                          key={member.id}
-                          className={`p-3 rounded-lg border transition-colors ${
-                            selectedMembers.includes(member.id)
-                              ? 'border-primary bg-primary/5'
-                              : 'border-border'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <Checkbox
-                              id={`member-${member.id}`}
-                              checked={selectedMembers.includes(member.id)}
-                              onCheckedChange={() => toggleMemberSelection(member.id)}
-                            />
-                            <label
-                              htmlFor={`member-${member.id}`}
-                              className="text-sm font-medium cursor-pointer"
-                            >
-                              {member.name}
-                            </label>
+                  {memberSearch && (
+                    <div className="grid gap-3 sm:grid-cols-2 max-h-80 overflow-y-auto">
+                      {members
+                        .filter((member) =>
+                          member.name.toLowerCase().includes(memberSearch.toLowerCase())
+                        )
+                        .map((member) => (
+                          <div
+                            key={member.id}
+                            className={`p-3 rounded-lg border transition-colors ${
+                              selectedMembers.includes(member.id)
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <Checkbox
+                                id={`member-${member.id}`}
+                                checked={selectedMembers.includes(member.id)}
+                                onCheckedChange={() => toggleMemberSelection(member.id)}
+                              />
+                              <label
+                                htmlFor={`member-${member.id}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {member.name}
+                              </label>
+                            </div>
+                            {selectedMembers.includes(member.id) && (
+                              <Textarea
+                                placeholder={`Feedback para ${member.name}...`}
+                                value={memberFeedbacks[member.id] || ''}
+                                onChange={(e) =>
+                                  setMemberFeedbacks((prev) => ({
+                                    ...prev,
+                                    [member.id]: e.target.value,
+                                  }))
+                                }
+                                rows={2}
+                                className="text-sm"
+                              />
+                            )}
                           </div>
-                          {selectedMembers.includes(member.id) && (
-                            <Textarea
-                              placeholder={`Feedback para ${member.name}...`}
-                              value={memberFeedbacks[member.id] || ''}
-                              onChange={(e) =>
-                                setMemberFeedbacks((prev) => ({
-                                  ...prev,
-                                  [member.id]: e.target.value,
-                                }))
-                              }
-                              rows={2}
-                              className="text-sm"
-                            />
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                  {members.filter((member) =>
-                    member.name.toLowerCase().includes(memberSearch.toLowerCase())
-                  ).length === 0 && memberSearch && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Nenhum membro encontrado
-                    </p>
+                        ))}
+                      {members.filter((member) =>
+                        member.name.toLowerCase().includes(memberSearch.toLowerCase())
+                      ).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4 col-span-full">
+                          Nenhum membro encontrado
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

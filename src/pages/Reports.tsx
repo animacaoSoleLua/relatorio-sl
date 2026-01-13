@@ -209,7 +209,7 @@ export default function Reports() {
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Avaliação da caixa</p>
+                      <p className="text-sm text-muted-foreground mb-1">Avaliação Geral da Equipe</p>
                       <div className="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <Star
