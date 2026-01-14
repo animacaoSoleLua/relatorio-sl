@@ -178,7 +178,7 @@ export default function ReportDetailsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5 text-primary" />
-            Detalhes do evento do dia {formatEventDate(report.event_date)}
+            {report ? `Detalhes do evento do dia ${formatEventDate(report.event_date)}` : 'Carregando...'}
           </DialogTitle>
         </DialogHeader>
 
