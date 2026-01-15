@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Loader2, Upload } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -105,15 +105,21 @@ export default function Profile() {
 
     if (profileError) {
       toast.error('Erro ao atualizar perfil: ' + profileError.message);
+      setLoading(false);
+      return;
     }
-    else {
-      toast.success('Perfil atualizado com sucesso!');
-      if (newAvatarUrl !== avatarUrl) {
-        setAvatarUrl(newAvatarUrl); 
-        // Force refresh of AppLayout to show new avatar - not ideal but works for now
-        window.location.reload();
-      }
+
+    // Update members table if avatar changed
+    if (newAvatarUrl !== avatarUrl && user.email) {
+      await supabase
+        .from('members')
+        .update({ avatar_url: newAvatarUrl })
+        .eq('email', user.email);
     }
+
+    toast.success('Perfil atualizado com sucesso!');
+    setAvatarUrl(newAvatarUrl);
+    await refreshProfile();
 
     setLoading(false);
   };
