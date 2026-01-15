@@ -100,7 +100,8 @@ export default function Profile() {
     // Update profile
     const { error: profileError } = await supabase
       .from('profiles')
-      .upsert({ user_id: user.id, name, avatar_url: newAvatarUrl, email }, { onConflict: 'user_id' });
+      .update({ avatar_url: newAvatarUrl, email })
+      .eq('user_id', user.id);
 
     if (profileError) {
       toast.error('Erro ao atualizar perfil: ' + profileError.message);
