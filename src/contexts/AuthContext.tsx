@@ -1,24 +1,17 @@
-// Auth context with profile support
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 type UserRole = 'admin' | 'animador' | null;
 
-interface UserProfile {
-  name: string;
-  avatar_url: string | null;
-}
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: UserRole;
-  userProfile: UserProfile | null;
+  userName: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
@@ -50,65 +43,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserName = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, avatar_url')
+        .select('name')
         .eq('user_id', userId)
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching user name:', error);
         return null;
       }
 
-      return data as UserProfile;
+      return data?.name || null;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error fetching user name:', error);
       return null;
     }
   };
 
-  const refreshProfile = async () => {
-    if (user) {
-      const profile = await fetchUserProfile(user.id);
-      setUserProfile(profile);
-    }
-  };
-
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Defer fetching to avoid blocking
           setTimeout(async () => {
             const role = await fetchUserRole(session.user.id);
             setUserRole(role);
-            const profile = await fetchUserProfile(session.user.id);
-            setUserProfile(profile);
+            const name = await fetchUserName(session.user.id);
+            setUserName(name);
           }, 0);
         } else {
           setUserRole(null);
-          setUserProfile(null);
+          setUserName(null);
         }
         
         setLoading(false);
       }
     );
 
-    // Then get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         fetchUserRole(session.user.id).then(setUserRole);
-        fetchUserProfile(session.user.id).then(setUserProfile);
+        fetchUserName(session.user.id).then(setUserName);
       }
       
       setLoading(false);
@@ -132,11 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
-    setUserProfile(null);
+    setUserName(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userRole, userProfile, loading, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, userRole, userName, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

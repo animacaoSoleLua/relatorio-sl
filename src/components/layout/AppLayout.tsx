@@ -38,12 +38,12 @@ const navigation = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const { user, userRole, userProfile, signOut } = useAuth();
+  const { user, userRole, userName, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const avatarFallback = userProfile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+  const avatarFallback = userName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
 
   const handleSignOut = async () => {
     await signOut();
@@ -111,7 +111,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={userProfile?.avatar_url || ''} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                       {avatarFallback}
                     </AvatarFallback>
@@ -158,14 +157,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-3 h-auto py-3">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={userProfile?.avatar_url || ''} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {avatarFallback}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <span className="text-sm font-medium truncate max-w-[140px]">
-                      {userProfile?.name || user?.email}
+                      {userName || user?.email}
                     </span>
                     <span className="text-xs text-muted-foreground capitalize">
                       {userRole}
