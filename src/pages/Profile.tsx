@@ -28,6 +28,9 @@ export default function Profile() {
     setLoading(true);
 
     if (email !== user.email) {
+      const oldEmail = user.email;
+      
+      // Update auth email
       const { error: emailError } = await supabase.auth.updateUser({ email });
       if (emailError) {
         toast.error('Erro ao atualizar e-mail: ' + emailError.message);
@@ -41,7 +44,15 @@ export default function Profile() {
         .update({ email })
         .eq('user_id', user.id);
 
-      toast.success('E-mail de confirmação enviado para o novo endereço.');
+      // Update email in members table (synced by old email)
+      if (oldEmail) {
+        await supabase
+          .from('members')
+          .update({ email })
+          .eq('email', oldEmail);
+      }
+
+      toast.success('E-mail de confirmação enviado para o novo endereço. Após confirmar, o e-mail será atualizado em todo o sistema.');
     } else {
       toast.info('Nenhuma alteração detectada.');
     }
