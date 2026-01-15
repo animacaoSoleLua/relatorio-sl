@@ -14,7 +14,17 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const fallbackAuthContext: AuthContextType = {
+  user: null,
+  session: null,
+  userRole: null,
+  userName: null,
+  loading: true,
+  signIn: async () => ({ error: new Error('AuthProvider não está montado.') }),
+  signOut: async () => {},
+};
+
+const AuthContext = createContext<AuthContextType>(fallbackAuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -36,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
 
-      return data?.role as UserRole || null;
+      return (data?.role as UserRole) || null;
     } catch (error) {
       console.error('Error fetching user role:', error);
       return null;
@@ -65,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -80,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRole(null);
           setUserName(null);
         }
-        
+
         setLoading(false);
       }
     );
@@ -88,12 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchUserRole(session.user.id).then(setUserRole);
         fetchUserName(session.user.id).then(setUserName);
       }
-      
+
       setLoading(false);
     });
 
@@ -102,10 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error };
     } catch (error) {
       return { error: error as Error };
@@ -127,8 +134,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
   return context;
 }
+
