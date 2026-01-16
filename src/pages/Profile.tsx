@@ -69,7 +69,7 @@ export default function Profile() {
         }
       }
 
-      toast.success('E-mail de confirmação enviado para o novo endereço. Após confirmar, o login será feito com o novo e-mail e a alteração ficará refletida em todo o sistema.');
+      toast.success('E-mail atualizado com sucesso em todo o sistema!');
 
     } else {
       toast.info('Nenhuma alteração detectada.');
