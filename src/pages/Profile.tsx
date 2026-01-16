@@ -38,21 +38,39 @@ export default function Profile() {
         return;
       }
 
+
       // Update email in profiles table
       await supabase
         .from('profiles')
         .update({ email })
         .eq('user_id', user.id);
 
-      // Update email in members table (synced by old email)
+      // Sync email in members table via backend function (members UPDATE is admin-only)
       if (oldEmail) {
-        await supabase
-          .from('members')
-          .update({ email })
-          .eq('email', oldEmail);
+        const { data: session } = await supabase.auth.getSession();
+
+        const res = await supabase.functions.invoke('sync-email-change', {
+          body: { oldEmail, newEmail: email },
+          headers: {
+            Authorization: `Bearer ${session.session?.access_token}`,
+          },
+        });
+
+        if (res.error) {
+          toast.error('Erro ao sincronizar e-mail na equipe: ' + res.error.message);
+          setLoading(false);
+          return;
+        }
+
+        if (res.data?.error) {
+          toast.error('Erro ao sincronizar e-mail na equipe: ' + res.data.error);
+          setLoading(false);
+          return;
+        }
       }
 
-      toast.success('E-mail de confirmação enviado para o novo endereço. Após confirmar, o e-mail será atualizado em todo o sistema.');
+      toast.success('E-mail de confirmação enviado para o novo endereço. Após confirmar, o login será feito com o novo e-mail e a alteração ficará refletida em todo o sistema.');
+
     } else {
       toast.info('Nenhuma alteração detectada.');
     }
