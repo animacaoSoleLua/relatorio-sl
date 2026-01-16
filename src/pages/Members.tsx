@@ -50,7 +50,7 @@ interface MemberFeedback {
 }
 
 export default function Members() {
-  const { userRole } = useAuth();
+  const { userRole, user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,7 +167,6 @@ export default function Members() {
         .from('members')
         .update({
           name: editMemberName.trim(),
-          email: editMemberEmail.trim(),
           member_type: editMemberType,
         })
         .eq('id', memberToEdit.id);
@@ -184,7 +183,6 @@ export default function Members() {
         setSelectedMember({
           ...selectedMember,
           name: editMemberName.trim(),
-          email: editMemberEmail.trim(),
           member_type: editMemberType,
         });
       }
@@ -432,14 +430,16 @@ export default function Members() {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={(e) => openDeleteDialog(member, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {member.email !== user?.email && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={(e) => openDeleteDialog(member, e)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -566,10 +566,13 @@ export default function Members() {
                 <Input
                   id="editEmail"
                   type="email"
-                  placeholder="email@exemplo.com"
                   value={editMemberEmail}
-                  onChange={(e) => setEditMemberEmail(e.target.value)}
+                  disabled
+                  className="bg-muted"
                 />
+                <p className="text-xs text-muted-foreground">
+                  O email não pode ser alterado
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="editMemberType">Tipo de Membro</Label>
