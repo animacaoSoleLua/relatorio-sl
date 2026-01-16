@@ -18,7 +18,6 @@ import {
   UserCog,
   Menu, 
   LogOut,
-  User,
   PlusCircle
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
@@ -122,11 +121,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <p className="text-sm font-medium">{user?.email}</p>
                   <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Perfil
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
@@ -172,10 +166,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Perfil
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair

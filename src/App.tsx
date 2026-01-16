@@ -13,7 +13,6 @@ import Reports from "./pages/Reports";
 import NewReport from "./pages/NewReport";
 import Members from "./pages/Members";
 import Users from "./pages/Users";
-import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -67,14 +66,6 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <Users />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
                   </ProtectedRoute>
                 }
               />
