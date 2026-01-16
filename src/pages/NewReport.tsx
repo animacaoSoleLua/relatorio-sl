@@ -62,13 +62,13 @@ export default function NewReport() {
   
   // Event Description
   const [eventDescription, setEventDescription] = useState('');
-  const [eventDifficulty, setEventDifficulty] = useState(3);
-  const [eventQuality, setEventQuality] = useState(3);
+  const [eventDifficulty, setEventDifficulty] = useState(0);
+  const [eventQuality, setEventQuality] = useState(0);
   const [difficultiesProblems, setDifficultiesProblems] = useState('');
   
   // Electronics
-  const [speakerQuality, setSpeakerQuality] = useState(3);
-  const [microphoneQuality, setMicrophoneQuality] = useState(3);
+  const [speakerQuality, setSpeakerQuality] = useState(0);
+  const [microphoneQuality, setMicrophoneQuality] = useState(0);
   const [speakerNumber, setSpeakerNumber] = useState('');
   const [electronicsObservations, setElectronicsObservations] = useState('');
   const [damagePhotos, setDamagePhotos] = useState<File[]>([]);

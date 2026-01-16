@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users, Star, Calendar, LayoutGrid, List } from 'lucide-react';
+import { FileText, Users, Star, Calendar, LayoutGrid, List, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import AppLayout from '@/components/layout/AppLayout';
@@ -11,6 +11,8 @@ interface DashboardStats {
   totalReports: number;
   averageRating: number;
   reportsThisMonth: number;
+  averageRatingSound: number;
+  averageEventQuality: number;
 }
 
 export default function Dashboard() {
@@ -18,6 +20,8 @@ export default function Dashboard() {
     totalReports: 0,
     averageRating: 0,
     reportsThisMonth: 0,
+    averageRatingSound: 0,
+    averageEventQuality: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentReports, setRecentReports] = useState<any[]>([]);
@@ -77,10 +81,28 @@ export default function Dashboard() {
         })
       );
 
+      const { data: ratingSound } = await supabase
+        .from('reports')
+        .select('speaker_quality');
+
+      const averageRatingSound = ratingSound && ratingSound.length > 0
+        ? ratingSound.reduce((acc, r) => acc + r.speaker_quality, 0) / ratingSound.length
+        : 0;
+
+      const { data: ratingEvent } = await supabase
+        .from('reports')
+        .select('event_quality');
+
+      const averageEventQuality = ratingEvent && ratingEvent.length > 0
+        ? ratingEvent.reduce((acc, r) => acc + r.event_quality, 0) / ratingEvent.length
+        : 0;
+
       setStats({
         totalReports: totalReports || 0,
         averageRating: Math.round(averageRating * 10) / 10,
         reportsThisMonth: reportsThisMonth || 0,
+        averageRatingSound: Math.round(averageRatingSound * 10) / 10,
+        averageEventQuality: Math.round(averageEventQuality * 10) / 10,
       });
 
       setRecentReports(reportsWithCreators);
@@ -104,6 +126,22 @@ export default function Dashboard() {
       title: 'Avaliação Média da Equipe',
       value: stats.averageRating.toFixed(1),
       icon: Star,
+      color: 'text-sun',
+      bgColor: 'bg-sun/20',
+    },
+    {
+      title: 'Qualidade Média do Som',
+      value: stats.averageRatingSound.toFixed(1),
+      icon: Star,
+      description: 'Avaliação do som nos eventos',
+      color: 'text-sun',
+      bgColor: 'bg-sun/20',
+    },
+    {
+      title: 'Qualidade Média do Evento',
+      value: stats.averageEventQuality.toFixed(1),
+      icon: Star,
+      description: 'Avaliação geral dos eventos',
       color: 'text-sun',
       bgColor: 'bg-sun/20',
     },
